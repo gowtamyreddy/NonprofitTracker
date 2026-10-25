@@ -34,7 +34,10 @@ def do_search(query):
                 "are shown to tell them apart.")
     choices = [f"{r['name']} ({r['city'] or ''}, {r['state'] or ''}) "
                f"[{r['ein']}]" for r in results]
-    return gr.update(choices=choices, value=choices[0]), ""
+    # No auto-select: the first result is often a small chapter, and
+    # loading it before the user picks shows the wrong organization.
+    return gr.update(choices=choices, value=None), \
+        "Pick the organization you want from the list."
 
 
 def do_detail(choice):
