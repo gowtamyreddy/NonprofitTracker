@@ -6,18 +6,39 @@ a nonprofit's numbers change when its new 990 lands, not daily.
 """
 
 import json
+import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
+
+try:
+    import certifi
+except ImportError:
+    certifi = None
 
 BASE_URL = "https://projects.propublica.org/nonprofits/api/v2"
 USER_AGENT = "NonprofitTracker/1.0 (research demo)"
 
 
+def _ssl_context():
+    """Verify certificates against a real CA bundle.
+
+    The python.org installer for macOS ships Python without root
+    certificates, so the default context fails every HTTPS request
+    there with CERTIFICATE_VERIFY_FAILED. certifi supplies the
+    maintained Mozilla bundle; verification stays fully on, nothing
+    is bypassed. Without certifi, fall back to the default context.
+    """
+    if certifi is not None:
+        return ssl.create_default_context(cafile=certifi.where())
+    return ssl.create_default_context()
+
+
 def _get_json(url):
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=30,
+                                    context=_ssl_context()) as resp:
             return json.load(resp)
     except urllib.error.HTTPError as exc:
         if exc.code == 404:

@@ -51,6 +51,14 @@ Tests (offline):
 python -m unittest tests.test_nonprofittracker -v
 ```
 
+## Mac note: SSL certificate errors
+The python.org installer for macOS ships Python without root
+certificates, so the first version failed there with
+`CERTIFICATE_VERIFY_FAILED` on every search. This project now
+depends on `certifi` and verifies against its CA bundle, so
+`pip install -r requirements.txt` is the whole fix. Verification is
+never disabled.
+
 ## Golden set
 `data/golden_cases.jsonl` pins each organization's latest filing
 values as recorded from the live API. The eval compares exactly, so

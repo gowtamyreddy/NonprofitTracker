@@ -86,11 +86,26 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(results[0]["ein"], 123)
 
     def test_search_404_means_empty(self):
-        def raise_404(url, timeout=None):
+        def raise_404(url, **kwargs):
             raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
         with mock.patch.object(client.urllib.request, "urlopen",
                                side_effect=raise_404):
             self.assertEqual(client.search_orgs("nothinghere"), [])
+
+    def test_requests_verify_tls_with_a_context(self):
+        import io
+        import ssl
+        from unittest.mock import MagicMock
+
+        response = MagicMock()
+        response.__enter__.return_value = io.StringIO(
+            '{"organizations": []}')
+        with mock.patch.object(client.urllib.request, "urlopen",
+                               return_value=response) as urlopen:
+            result = client._get_json("https://example.org/x.json")
+        self.assertEqual(result, {"organizations": []})
+        self.assertIsInstance(urlopen.call_args.kwargs.get("context"),
+                              ssl.SSLContext)
 
     def test_get_org_sorts_filings_newest_first(self):
         stub = {"organization": {"ein": 1, "name": "Org"},
