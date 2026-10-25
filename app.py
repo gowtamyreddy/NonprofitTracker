@@ -52,8 +52,17 @@ def do_detail(choice):
         return (f"## {org['name']}\n\nNo filing data available for "
                 f"this organization.")
     latest = metrics[0]
+    latest_link = (f" ([Filing PDF]({latest['pdf_url']}))"
+                   if latest["pdf_url"] else "")
     lines = [f"## {org['name']} ({org['city']}, {org['state']})",
-             f"EIN {org['ein']} | Latest filing: {latest['year']}", "",
+             f"EIN {org['ein']} | Latest filing: {latest['year']}"
+             f"{latest_link}",
+             "",
+             "Source: IRS Form 990, tax year "
+             f"{latest['year']}, via ProPublica Nonprofit Explorer. "
+             "Every number in the money trail below comes from that "
+             "filing.",
+             "",
              "### Money trail (latest filing)",
              f"- Revenue: {_dollars(latest['revenue'])}",
              f"- Expenses: {_dollars(latest['expenses'])}",
@@ -76,12 +85,12 @@ def do_detail(choice):
         lines.append("- None in the latest filing.")
     lines += ["", "### Trend"]
     for metric in metrics[:5]:
+        pdf = (f" ([filing PDF]({metric['pdf_url']}))"
+               if metric["pdf_url"] else "")
         lines.append(f"- {metric['year']}: revenue "
                      f"{_dollars(metric['revenue'])}, expenses "
                      f"{_dollars(metric['expenses'])}, surplus "
-                     f"{_dollars(metric['surplus'])}")
-    if latest["pdf_url"]:
-        lines += ["", f"[Filing PDF]({latest['pdf_url']})"]
+                     f"{_dollars(metric['surplus'])}{pdf}")
     return "\n".join(lines)
 
 

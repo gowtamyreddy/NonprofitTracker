@@ -65,13 +65,17 @@ def cmd_show(args):
     print(f"  Fundraising net: {_dollars(latest['fundraising_net'])}")
     for flag in money.flags_for_history(metrics):
         print(f"  Flag: {flag['text']}")
-    print("  Trend (year, revenue, expenses, surplus):")
+    print("  Source: IRS Form 990, tax year "
+          f"{latest['year']}, via ProPublica Nonprofit Explorer.")
+    print("  Trend (year, revenue, expenses, surplus, filing PDF):")
     for metric in metrics[:5]:
         print(f"    {metric['year']}  {_dollars(metric['revenue'])}  "
               f"{_dollars(metric['expenses'])}  "
               f"{_dollars(metric['surplus'])}")
+        if metric["pdf_url"]:
+            print(f"      filing PDF: {metric['pdf_url']}")
     if latest["pdf_url"]:
-        print(f"  Filing PDF: {latest['pdf_url']}")
+        print(f"  Latest filing PDF: {latest['pdf_url']}")
 
 
 def cmd_eval(args):
