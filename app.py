@@ -3,6 +3,7 @@
 import re
 
 import gradio as gr
+import pandas as pd
 
 from nonprofittracker import client, money
 
@@ -25,6 +26,26 @@ def _pct(value):
     return "not reported" if value is None else f"{value * 100:.1f}%"
 
 
+def _trend_frames(metrics):
+    """Chart data for the trend years: revenue vs expenses lines,
+    surplus bars. Years are strings so the axis stays ordinal.
+    Missing values are dropped from the charts, not zero-filled."""
+    series = money.trend_series(metrics)
+    line_rows = []
+    for year, revenue, expenses in zip(series["years"], series["revenue"],
+                                       series["expenses"]):
+        if revenue is not None:
+            line_rows.append({"year": str(year), "amount": revenue,
+                              "series": "Revenue"})
+        if expenses is not None:
+            line_rows.append({"year": str(year), "amount": expenses,
+                              "series": "Expenses"})
+    bar_rows = [{"year": str(year), "surplus": surplus}
+                for year, surplus in zip(series["years"], series["surplus"])
+                if surplus is not None]
+    return pd.DataFrame(line_rows), pd.DataFrame(bar_rows)
+
+
 def do_search(query):
     results = client.search_orgs(query)
     if not results:
@@ -42,18 +63,18 @@ def do_search(query):
 
 def do_detail(choice):
     if not choice:
-        return "Search first, then pick an organization."
+        return "Search first, then pick an organization.", None, None, ""
     match = re.search(r"\[(\d+)\]\s*$", choice)
     if not match:
-        return "Could not read the EIN from that choice."
+        return "Could not read the EIN from that choice.", None, None, ""
     data = client.get_org(match.group(1))
     if not data:
-        return "No organization found for that EIN."
+        return "No organization found for that EIN.", None, None, ""
     org = data["organization"]
     metrics = [money.metrics_for_filing(f) for f in data["filings"]]
     if not metrics:
         return (f"## {org['name']}\n\nNo filing data available for "
-                f"this organization.")
+                f"this organization.", None, None, "")
     latest = metrics[0]
     latest_link = (f" ([Filing PDF]({latest['pdf_url']}))"
                    if latest["pdf_url"] else "")
@@ -91,15 +112,16 @@ def do_detail(choice):
         lines += [f"- {flag['text']}" for flag in flags]
     else:
         lines.append("- None in the latest filing.")
-    lines += ["", "### Trend"]
+    trend_lines = ["### Trend"]
     for metric in metrics[:5]:
         pdf = (f" ([filing PDF]({metric['pdf_url']}))"
                if metric["pdf_url"] else "")
-        lines.append(f"- {metric['year']}: revenue "
-                     f"{_dollars(metric['revenue'])}, expenses "
-                     f"{_dollars(metric['expenses'])}, surplus "
-                     f"{_dollars(metric['surplus'])}{pdf}")
-    return "\n".join(lines)
+        trend_lines.append(f"- {metric['year']}: revenue "
+                           f"{_dollars(metric['revenue'])}, expenses "
+                           f"{_dollars(metric['expenses'])}, surplus "
+                           f"{_dollars(metric['surplus'])}{pdf}")
+    line_df, bar_df = _trend_frames(metrics[:5])
+    return "\n".join(lines), line_df, bar_df, "\n".join(trend_lines)
 
 
 with gr.Blocks(title="Nonprofit Money Tracker") as demo:
@@ -113,9 +135,15 @@ with gr.Blocks(title="Nonprofit Money Tracker") as demo:
     search_note = gr.Markdown("")
     choice = gr.Dropdown(label="Pick the organization", choices=[])
     detail = gr.Markdown("")
+    line_plot = gr.LinePlot(x="year", y="amount", color="series",
+                            title="Revenue vs expenses")
+    bar_plot = gr.BarPlot(x="year", y="surplus",
+                          title="Surplus by year")
+    trend = gr.Markdown("")
     search_btn.click(do_search, inputs=query,
                      outputs=[choice, search_note])
-    choice.change(do_detail, inputs=choice, outputs=detail)
+    choice.change(do_detail, inputs=choice,
+                  outputs=[detail, line_plot, bar_plot, trend])
 
 if __name__ == "__main__":
     demo.launch()

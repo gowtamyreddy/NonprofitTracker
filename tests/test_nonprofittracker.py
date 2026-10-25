@@ -74,6 +74,25 @@ class MoneyTests(unittest.TestCase):
         metric = money.metrics_for_filing(filing())
         self.assertEqual(money.flags_for_history([metric]), [])
 
+    def test_trend_series_is_chronological(self):
+        history = [money.metrics_for_filing(f) for f in [
+            filing(tax_prd_yr=2023, totrevenue=1000, totfuncexpns=800),
+            filing(tax_prd_yr=2022, totrevenue=900, totfuncexpns=850),
+            filing(tax_prd_yr=2021, totrevenue=800, totfuncexpns=700),
+        ]]
+        series = money.trend_series(history)
+        self.assertEqual(series["years"], [2021, 2022, 2023])
+        self.assertEqual(series["revenue"], [800, 900, 1000])
+        self.assertEqual(series["surplus"], [100, 50, 200])
+
+    def test_trend_series_keeps_missing_values(self):
+        series = money.trend_series([money.metrics_for_filing(
+            {"tax_prd_yr": 2023})])
+        self.assertEqual(series["revenue"], [None])
+        self.assertEqual(money.trend_series([]),
+                         {"years": [], "revenue": [], "expenses": [],
+                          "surplus": []})
+
 
 class ClientTests(unittest.TestCase):
     def test_search_parses_results(self):

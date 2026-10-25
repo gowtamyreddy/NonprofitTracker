@@ -7,7 +7,8 @@ so a donor can decide for themselves.
 ## What it shows (latest 990 filing)
 Revenue, expenses, surplus and margin, net assets, contributions
 share, program revenue share, officer compensation and its share of
-expenses, fundraising net, plus a 5-year trend and flags for review
+expenses, fundraising net, plus a 5-year trend with revenue vs expenses and
+surplus charts, and flags for review
 (deficit, falling reserves, fundraising losses, high officer pay).
 Every result links to its filing PDF.
 

@@ -87,3 +87,17 @@ def flags_for_history(metrics):
                       "text": "Officer compensation above 5% of total "
                               "expenses."})
     return flags
+
+
+def trend_series(metrics):
+    """Chronological trend data for charts, oldest first.
+
+    Metrics arrive newest-first; the chart reads oldest to newest.
+    Missing values stay None so charts skip them instead of
+    plotting a false zero.
+    """
+    ordered = list(reversed(metrics))
+    return {"years": [m["year"] for m in ordered],
+            "revenue": [m["revenue"] for m in ordered],
+            "expenses": [m["expenses"] for m in ordered],
+            "surplus": [m["surplus"] for m in ordered]}
