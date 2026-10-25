@@ -63,6 +63,11 @@ def do_detail(choice):
              "Every number in the money trail below comes from that "
              "filing.",
              "",
+             "Note: ProPublica allows one PDF download per minute. "
+             "If a link shows a 429 error, wait a minute and click "
+             "again. The header link and the latest trend row link "
+             "to the same filing.",
+             "",
              "### Money trail (latest filing)",
              f"- Revenue: {_dollars(latest['revenue'])}",
              f"- Expenses: {_dollars(latest['expenses'])}",
